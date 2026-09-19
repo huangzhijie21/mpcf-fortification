@@ -6,7 +6,6 @@ protection budget* on the nodes of a directed equipment network so that the
 worst-case **adaptive, cost-weighted path-cut** an attacker can achieve is
 minimised.
 
-[中文说明见 `README_ZH.md`](README_ZH.md)
 
 ---
 
