@@ -1,0 +1,27 @@
+# Normalise line endings so the released tree behaves identically on Linux,
+# macOS and Windows.
+#
+# The shell drivers under revision/scripts are executed on Linux run servers.
+# If Git rewrote them to CRLF on checkout they would fail with
+# "bad interpreter: /bin/bash^M", so they are pinned to LF explicitly.
+* text=auto eol=lf
+
+*.sh    text eol=lf
+*.py    text eol=lf
+*.toml  text eol=lf
+*.cfg   text eol=lf
+*.cff   text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+*.env   text eol=lf
+
+# Binary artefacts must never be line-ending converted.
+*.png   binary
+*.pdf   binary
+*.zip   binary
+
+# Keep diffs readable for generated CSV tables.
+*.csv   text eol=lf -diff

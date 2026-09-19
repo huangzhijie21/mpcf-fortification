@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: "If you use this code, please cite the paper it accompanies."
+title: "MPCF: certified finite-budget task-path fortification"
+abstract: >-
+  Reference implementation of MPCF (Maximum Path-Cut Fortification), a certified
+  solver for placing a
+  finite protection budget on the nodes of a directed equipment network so that
+  the worst-case adaptive cost-weighted path-cut is minimised. Provides a
+  compact MILP (MPCF-Exact), a cut-generation solver with exact PathCut
+  separation (MPCF-CG), a one-step marginal ablation (MPCF-Greedy), the
+  graph-clustered statistical analysis, the seed-extension robustness analysis,
+  and the acceptance gates used for the published results.
+type: software
+version: "0.8.5"
+license: LicenseRef-NotYetSpecified
+authors:
+  - family-names: Huang
+    given-names: Zhijie
+repository-code: "https://github.com/huangzhijie21/mpcf-fortification"
+keywords:
+  - network fortification
+  - minimum cut
+  - critical infrastructure protection
+  - mixed-integer programming
+  - cut generation
+  - reproducibility
+preferred-citation:
+  type: article
+  title: "TODO: paper title"
+  # Fill in once the paper is published:
+  # authors:
+  #   - family-names: ...
+  #     given-names: ...
+  # journal: TODO
+  # year: TODO
+  # doi: TODO

@@ -1,0 +1,6 @@
+# Reproducible Linux server environment for CPython 3.10.
+# These versions provide manylinux x86_64 wheels and scipy.optimize.milp.
+numpy==1.26.4
+scipy==1.15.3
+networkx==3.4.2
+pytest==8.3.5

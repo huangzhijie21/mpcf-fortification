@@ -1,0 +1,24 @@
+include README.md
+include CRITICAL_SET_ALGORITHM_SPEC.md
+include OFFICIAL_DISMANTLING_BASELINES.md
+include IMPLEMENTATION_AUDIT.md
+include LITERATURE_POSITIONING.md
+include RMCD-F_frozen_spec_v1.0.md
+include RMCD-F_frozen_spec_v1.1.md
+include SERVER_RUNBOOK.md
+include PUBLIC_DATA_PROTOCOL.md
+include FINDER_SOURCE_PROVENANCE.md
+include MPCF_ALGORITHM_SPEC.md
+include MPCF_BASELINE_PROTOCOL.md
+include MPCF_EVIDENCE_COMPLETION_PROTOCOL.md
+include MPCF_DIRECTED_TASK_THREAD_PROTOCOL.md
+include MPCF_EVIDENCE_LEDGER_CHANGELOG.md
+include SERVER_MPCF_RUNBOOK.md
+include SERVER_MPCF_EVIDENCE_PATCH_RUNBOOK.md
+include SERVER_MPCF_DIRECTED_TASK_THREAD_RUNBOOK.md
+include requirements.txt
+include requirements-server-py310.txt
+recursive-include examples *.json
+recursive-include tests *.py
+recursive-include scripts *.py *.sh
+recursive-include public_data_mappings *.json

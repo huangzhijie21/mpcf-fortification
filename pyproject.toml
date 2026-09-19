@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rmcd-f"
+version = "0.8.5"
+description = "Certified task-path critical-set identification and finite-budget fortification"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "networkx>=3.2,<4",
+  "numpy>=1.24,<3",
+  "scipy>=1.11,<2",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+experiments = ["matplotlib>=3.7,<4"]
+joint = ["scipy>=1.17.1,<2", "matplotlib>=3.7,<4", "psutil>=7,<8"]
+
+[project.scripts]
+rmcd-f = "rmcd_f.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra"

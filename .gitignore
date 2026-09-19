@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Experiment output: regenerate with scripts/rev_run.py
+results/
+outputs/
+runs_long.csv
+instance_budget_cells.csv
+*.tmp
+
+# Deployment secrets and machine-specific settings
+revision/scripts/servers.env
+*.pem
+*.key
+.env
+
+# Third-party upstream checkout (obtain it yourself; see README)
+external/
+third_party/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
