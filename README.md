@@ -1,21 +1,21 @@
-# MPCF — Finite-Budget Task-Path Fortification
+# MPCF — Finite-Budget Mission-Path Fortification
 
-Reference implementation of **MPCF** (Maximum Path-Cut Fortification): a
+Reference implementation of **MPCF** (Mission-Path Cut Fortification): a
 certified solver for placing a *finite protection budget* on the nodes of a
 directed equipment network so that the worst-case **adaptive, cost-weighted
-path-cut** an attacker can achieve is minimised.
+mission-path cut** an attacker can achieve is minimised.
 
 ---
 
 ## 1. What the method does
 
-An attacker removes nodes from a directed task network subject to a per-node
+An attacker removes nodes from a directed mission network subject to a per-node
 attack cost. The defender first spends a **finite budget** `B` protecting
 nodes; protecting node `v` changes its attack cost from `a_v` to
 `δ_v = m·a_v`. The quantity being maximised by the defender is
 
 ```
-κ(P) = min over adaptive attacker strategies of  (cost of the cheapest surviving task path)
+κ(P) = min over adaptive attacker strategies of  (cost of the cheapest surviving mission path)
 ```
 
 computed exactly as a weighted node-split minimum cut on the frozen protection
@@ -442,7 +442,28 @@ Four of the five documents under `revision/docs/` are in Chinese;
 
 ## 11. Citation
 
-See `CITATION.cff`. If you use this code, please cite the paper it accompanies.
+If you use this code, please cite the paper it accompanies:
+
+> Huang, Z., Li, X., Wang, T., & Bai, L. (2026). *Identifying Critical
+> Fortification Node Sets for Kill-Web Mission Paths via Minimum Node-Cut
+> Optimization*. Preprint. https://doi.org/10.20944/preprints202609.0576.v1
+
+```bibtex
+@misc{huang2026mpcf,
+  title  = {Identifying Critical Fortification Node Sets for Kill-Web Mission
+            Paths via Minimum Node-Cut Optimization},
+  author = {Huang, Zhijie and Li, Xiaobo and Wang, Tao and Bai, Liang},
+  year   = {2026},
+  note   = {Preprint},
+  doi    = {10.20944/preprints202609.0576.v1},
+  url    = {https://doi.org/10.20944/preprints202609.0576.v1}
+}
+```
+
+The same metadata is in `CITATION.cff`, which GitHub reads to offer a
+"Cite this repository" button. It is a preprint; when the paper is published,
+update both the BibTeX above and the `preferred-citation` block in `CITATION.cff`
+to the version of record.
 
 ## 12. Licence
 

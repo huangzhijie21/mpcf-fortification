@@ -4,7 +4,7 @@
 
 Classical network-dismantling methods remove nodes to fragment an undirected
 structural graph. MPCF protects nodes to increase the adaptive minimum cut of a
-directed typed task network. Their objectives are different, so the comparison
+directed typed mission network. Their objectives are different, so the comparison
 uses a preregistered transfer protocol rather than relabeling a dismantling
 algorithm as a fortification optimizer.
 
@@ -16,7 +16,7 @@ reordering later nodes. The selected set is then evaluated by the same exact
 adaptive PathCut attacker used for MPCF on the original directed typed graph.
 
 This protocol tests whether a structurally critical ranking is also useful for
-protecting task paths. It does not claim that the baseline originally optimized
+protecting mission paths. It does not claim that the baseline originally optimized
 the MPCF objective.
 
 ## 2. Nature Review Table 1 Panel
@@ -115,7 +115,7 @@ the output metadata.
 Within each statistical comparison, all methods share:
 
 * identical serialized graph and SHA-256 graph fingerprint;
-* identical directed task-path family;
+* identical directed mission-path family;
 * identical attack and protection costs;
 * identical protection budget and finite uplift;
 * identical exact adaptive PathCut evaluator;

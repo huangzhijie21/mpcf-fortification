@@ -1,15 +1,14 @@
 cff-version: 1.2.0
-message: "If you use this code, please cite the paper it accompanies."
-title: "MPCF: certified finite-budget task-path fortification"
+message: "If you use this software, please cite the paper it accompanies."
+title: "MPCF: certified finite-budget mission-path fortification"
 abstract: >-
-  Reference implementation of MPCF (Maximum Path-Cut Fortification), a certified
-  solver for placing a
-  finite protection budget on the nodes of a directed equipment network so that
-  the worst-case adaptive cost-weighted path-cut is minimised. Provides a
-  compact MILP (MPCF-Exact), a cut-generation solver with exact PathCut
-  separation (MPCF-CG), a one-step marginal ablation (MPCF-Greedy), the
-  graph-clustered statistical analysis, the seed-extension robustness analysis,
-  and the acceptance gates used for the published results.
+  Reference implementation of MPCF (Mission-Path Cut Fortification), a certified
+  solver for placing a finite protection budget on the nodes of a directed
+  equipment network so that the worst-case adaptive, cost-weighted mission-path
+  cut is minimised. Provides a compact MILP (MPCF-Exact), a cut-generation solver
+  with exact PathCut separation (MPCF-CG), a one-step marginal ablation
+  (MPCF-Greedy), the graph-clustered statistical analysis, the seed-extension
+  robustness analysis, and the acceptance gates used for the published results.
 type: software
 version: "0.8.5"
 license: LicenseRef-NotYetSpecified
@@ -19,18 +18,30 @@ authors:
 repository-code: "https://github.com/huangzhijie21/mpcf-fortification"
 keywords:
   - network fortification
-  - minimum cut
+  - minimum node cut
+  - mission path
+  - kill web
   - critical infrastructure protection
   - mixed-integer programming
   - cut generation
   - reproducibility
 preferred-citation:
-  type: article
-  title: "TODO: paper title"
-  # Fill in once the paper is published:
-  # authors:
-  #   - family-names: ...
-  #     given-names: ...
-  # journal: TODO
-  # year: TODO
-  # doi: TODO
+  type: preprint
+  title: >-
+    Identifying Critical Fortification Node Sets for Kill-Web Mission Paths via
+    Minimum Node-Cut Optimization
+  authors:
+    - family-names: Huang
+      given-names: Zhijie
+    - family-names: Li
+      given-names: Xiaobo
+    - family-names: Wang
+      given-names: Tao
+    - family-names: Bai
+      given-names: Liang
+  year: 2026
+  doi: "10.20944/preprints202609.0576.v1"
+  url: "https://doi.org/10.20944/preprints202609.0576.v1"
+  # This work is a preprint. When it is published, replace this block with the
+  # journal reference: change `type` to `article`, add `journal`/`volume`/`pages`,
+  # and update `year` and `doi` to the version of record.

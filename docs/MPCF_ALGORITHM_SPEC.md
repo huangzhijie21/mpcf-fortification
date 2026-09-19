@@ -6,9 +6,9 @@ MPCF answers one question:
 
 > Given a finite protection budget, which equipment nodes should be fortified
 > to maximize the minimum adversarial cost required to break every complete
-> kill-network task path?
+> kill-network mission path?
 
-The resulting margin is a resistance threshold for complete task-path
+The resulting margin is a resistance threshold for complete mission-path
 disconnection. In a resilience interpretation, it is one pre-event design
 dimension of absorptive capacity; it is not a complete resilience curve and
 does not by itself quantify partial service loss, degradation speed, or
@@ -18,14 +18,14 @@ The modeled object is the directed physical system graph available to the
 friendly planner for one bounded task. Removable nodes are implemented component
 instances, directed edges are source-backed contributions to task completion,
 and initiation/completion terminals are fixed non-removable boundaries. The
-task-path family is the complete set of directed paths between those boundaries.
+mission-path family is the complete set of directed paths between those boundaries.
 The four-stage `S-C-L-E` kill-network graph is the primary synthetic special
 case, not a universal admission requirement. MPCF does not
 model deception, information age, weapon scheduling, repair, or online role
 inference. Those mechanisms are outside this chapter.
 
 For `S-C-L-E` experiments, the role sequence remains an interface constraint
-used to define feasible task paths. For independent testbeds, descriptive stage
+used to define feasible mission paths. For independent testbeds, descriptive stage
 labels do not generate paths: only audited directed adjacency and the declared
 task boundaries do. Neither representation changes during one fortification
 decision.
@@ -47,7 +47,7 @@ a_v(P) = a_v + delta_v * 1[v in P].
 ```
 
 Let `C(G)` be the family of removable-component cuts that intersect every
-complete directed task path between the fixed boundaries. The adaptive
+complete directed mission path between the fixed boundaries. The adaptive
 post-protection dismantling margin is
 
 ```text
@@ -183,7 +183,7 @@ minimum over the same cut family preserves the inequality.
 **Proposition (non-submodularity in general).** `kappa` is not generally a
 submodular set function.
 
-**Proof by counterexample.** Consider the unique task path
+**Proof by counterexample.** Consider the unique mission path
 `s -> u -> v -> t`, with `a_u=a_v=1` and `delta_u=delta_v=1`. Then
 `kappa(empty)=kappa({u})=kappa({v})=1`, while `kappa({u,v})=2`. The marginal
 gain of protecting `v` is zero at the empty set and one after protecting `u`,
@@ -288,7 +288,7 @@ mappings remain replayable but cannot enter formal performance tables.
 
 ## 12. Independent Capacity-Threshold Evaluation
 
-The primary MPCF objective remains the minimum complete task-path cut cost.
+The primary MPCF objective remains the minimum complete mission-path cut cost.
 After a protection set has been frozen, a separate evaluation computes the
 minimum adaptive attack cost required to leave no more than
 `floor(r * Omega_0)` concurrent S-C-L-E role motifs, for preregistered

@@ -13,7 +13,7 @@ solver, frozen graph panel, or primary comparison protocol.
    costs in `{1,2,4}`, how much is lost by raw structural ranking, and how much is
    recovered by score-per-cost, prefix knapsack, MPCF-Greedy, and MPCF-Exact?
 3. **Source of improvement.** What is contributed by task-node filtering,
-   directed task-path semantics, and joint set optimization, in that order?
+   directed mission-path semantics, and joint set optimization, in that order?
 4. **Operational interpretation.** How do relative gaps vary by topology, scale,
    and budget; which S/C/L/E roles are selected; and how do an initial cut, an
    equal-cost alternative cut, Greedy protection, and Exact protection differ in
