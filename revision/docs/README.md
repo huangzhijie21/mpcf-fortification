@@ -1,7 +1,7 @@
 # MPCF Revision Layer
 
 This directory and `src/rmcd_f/rev/` implement the revision plan for the MPCF
-(MPCF) paper. The MPCF solver core is **not** rewritten: `MPCF-Exact`,
+paper. The MPCF solver core is **not** rewritten: `MPCF-Exact`,
 `MPCF-CG` and `MPCF-Greedy` keep their formulations, their certificates and
 their objective. What changed is the surrounding experiment organisation,
 statistics, logging, registry, heterogeneity design and reproducibility.
@@ -154,12 +154,19 @@ case for a cloned release), and otherwise a content digest over the twelve files
 in `NUMERICAL_CORE`. The digest normalises line endings, so the same source hashes
 identically whether it was checked out in CRLF or LF.
 
-| value | rule | where |
+| value | rule | what it identifies |
 |---|---|---|
 | `core-a8deebd9ddef8772f9768affdf9ee483d1e48193` | byte-exact, as deployed | recorded on every row of the published archive |
-| `core-f018acb54d16e1cfd42e539d86562dcff1577365` | line-ending normalised | what this repository computes outside a git checkout |
+| `core-f018acb54d16e1cfd42e539d86562dcff1577365` | line-ending normalised | the same code, before identifiers were renamed to `MPCF` |
+| `core-75c2b55cf133a5bf762f4277b252b8c7977da757` | line-ending normalised | the code in this repository |
 
-Both describe the same code. The deployed tree carried mixed line endings
+The first two describe the same code: the deployed tree carried mixed line endings
 (`task_path_fortification.py` in CRLF, `rev/panels.py` in LF), which is the only
-reason the two values differ; under either rule the *content* is identical
-across the deployed tree, the release tree and a fresh clone.
+reason they differ; under the normalised rule the *content* is identical across
+the deployed tree, the pre-rename release and a fresh clone.
+
+The third differs from the second only in identifier names — the `MPCF` rename and
+the corresponding `NUMERICAL_CORE` filenames such as `mpcf_supplementary.py`. No
+formula, bound, cost system or panel definition changed, which was checked by
+relabelling the published archive's 3 834 method cells and regenerating every
+downstream file: all 34 statistics and table CSVs stayed numerically identical.

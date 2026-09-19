@@ -123,19 +123,25 @@ NUMERICAL_CORE: tuple[str, ...] = (
 )
 
 
-#: Revision identifier recorded by the runs that produced the published
-#: archive, under the original **byte-exact** rule.  That rule hashed the raw
-#: bytes of :data:`NUMERICAL_CORE` as deployed, and the deployed tree happened
-#: to carry mixed line endings (``task_path_fortification.py`` in CRLF,
+#: Revision identifier recorded on every row of the published archive, under
+#: the original **byte-exact** rule.  That rule hashed the raw bytes of
+#: :data:`NUMERICAL_CORE` as deployed, and the deployed tree happened to carry
+#: mixed line endings (``task_path_fortification.py`` in CRLF,
 #: ``rev/panels.py`` in LF), so the value is not reproducible from a fresh
 #: checkout on an arbitrary platform.
-#:
-#: The content is nevertheless identical: under the line-ending-normalised rule
-#: below, both the deployed tree and this repository hash to
-#: ``core-f018acb54d16e1cfd42e539d86562dcff1577365``.  Published rows keep
-#: their recorded value; re-runs report the normalised one.
 LEGACY_CODE_REVISION = "core-a8deebd9ddef8772f9768affdf9ee483d1e48193"
-CODE_REVISION_NORMALISED = "core-f018acb54d16e1cfd42e539d86562dcff1577365"
+
+#: The same code as :data:`LEGACY_CODE_REVISION`, hashed under the
+#: line-ending-normalised rule and before the solver identifiers were renamed
+#: from their historical prefix to ``MPCF``.
+PRE_RENAME_CODE_REVISION = "core-f018acb54d16e1cfd42e539d86562dcff1577365"
+
+#: This repository, under the normalised rule.  It differs from
+#: :data:`PRE_RENAME_CODE_REVISION` only in identifier names and in the
+#: ``NUMERICAL_CORE`` module filenames: no formula, bound, cost system or panel
+#: definition changed, which was checked by relabelling the published archive
+#: and regenerating every statistics and table CSV with identical numbers.
+RENAMED_CODE_REVISION = "core-75c2b55cf133a5bf762f4277b252b8c7977da757"
 
 
 def code_commit(root: Path | str | None = None) -> str:

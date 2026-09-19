@@ -217,14 +217,26 @@ def test_manifest_records_the_prespecification() -> None:
 # ---------------------------------------------------------------------------
 
 
-def _workspace_temp():
-    """Scratch directory inside the repo: the OS temp dir is not writable here."""
+@pytest.fixture
+def scratch():
+    """Scratch directory inside the repository, removed again afterwards.
 
+    The OS temp directory is not writable in every environment this suite is
+    expected to run in (the Windows sandbox in particular), so these tests use a
+    directory under the repository root.  It is deleted on teardown so that
+    running the suite does not leave anything behind in the working tree.
+    """
+
+    import shutil
     import tempfile
     from pathlib import Path
 
     root = Path(__file__).resolve().parents[2]
-    return Path(tempfile.mkdtemp(prefix="seedext_", dir=root))
+    directory = Path(tempfile.mkdtemp(prefix="seedext_", dir=root))
+    try:
+        yield directory
+    finally:
+        shutil.rmtree(directory, ignore_errors=True)
 
 
 def _load_runner():
@@ -242,7 +254,7 @@ def _load_runner():
     return module
 
 
-def test_seedext_resolves_its_own_seeds_not_the_benchmark_seeds() -> None:
+def test_seedext_resolves_its_own_seeds_not_the_benchmark_seeds(scratch) -> None:
     """Regression: a shared --seeds default once made the extension a duplicate.
 
     ``--seeds`` has no default, and each panel resolves its own, because a
@@ -251,7 +263,6 @@ def test_seedext_resolves_its_own_seeds_not_the_benchmark_seeds() -> None:
     """
 
     runner = _load_runner()
-    scratch = _workspace_temp()
     args = runner.build_parser().parse_args(
         ["--experiment", "seedext", "--output", str(scratch)]
     )
@@ -270,11 +281,10 @@ def test_seedext_resolves_its_own_seeds_not_the_benchmark_seeds() -> None:
     assert len(set(extension_seeds) | set(benchmark_seeds)) == 10
 
 
-def test_seedext_graphs_match_the_benchmark_in_every_respected_way() -> None:
+def test_seedext_graphs_match_the_benchmark_in_every_respected_way(scratch) -> None:
     """Only the seed may differ; topology, size, cost and budget must not."""
 
     runner = _load_runner()
-    scratch = _workspace_temp()
     args = runner.build_parser().parse_args(
         ["--experiment", "seedext", "--output", str(scratch)]
     )

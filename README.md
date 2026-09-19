@@ -1,11 +1,9 @@
 # MPCF — Finite-Budget Task-Path Fortification
 
-Reference implementation of **MPCF** (Maximum Path-Cut Fortification), also
-referred to as **MPCF** in the paper: a certified solver for placing a *finite
-protection budget* on the nodes of a directed equipment network so that the
-worst-case **adaptive, cost-weighted path-cut** an attacker can achieve is
-minimised.
-
+Reference implementation of **MPCF** (Maximum Path-Cut Fortification): a
+certified solver for placing a *finite protection budget* on the nodes of a
+directed equipment network so that the worst-case **adaptive, cost-weighted
+path-cut** an attacker can achieve is minimised.
 
 ---
 
@@ -314,18 +312,29 @@ Wilcoxon tests, Holm-adjust the pairwise family, and bootstrap **whole graphs**
 a content digest over the twelve files of `NUMERICAL_CORE`, with line endings
 normalised so the same source hashes identically on every platform.
 
-| value | rule | where |
+| value | rule | what it identifies |
 |---|---|---|
-| `core-a8deebd9ddef8772f9768affdf9ee483d1e48193` | byte-exact, as deployed | on every row of the published archive |
-| `core-f018acb54d16e1cfd42e539d86562dcff1577365` | line-ending normalised | what this repository computes outside a git checkout |
+| `core-a8deebd9ddef8772f9768affdf9ee483d1e48193` | byte-exact, as deployed | recorded on every row of the published archive |
+| `core-f018acb54d16e1cfd42e539d86562dcff1577365` | line-ending normalised | the same code, before identifiers were renamed to `MPCF` |
+| `core-75c2b55cf133a5bf762f4277b252b8c7977da757` | line-ending normalised | the code in this repository |
 
-Both describe the same code: the deployed tree happened to carry mixed line
-endings (`task_path_fortification.py` in CRLF, `rev/panels.py` in LF), which is
-the only reason the two differ. Verified by hashing the deployed tree, this
-release tree and a fresh clone under the normalised rule — all three agree. A
-clone therefore reports a git SHA, and a non-checkout copy reports
-`core-f018acb5…`; either way the `code_revision_consistency` gate holds, because
-every row in a run carries the same value.
+The first two describe the same code: the deployed tree happened to carry mixed
+line endings (`task_path_fortification.py` in CRLF, `rev/panels.py` in LF), which
+is the only reason they differ. Hashing the deployed tree, the pre-rename release
+and a fresh clone under the normalised rule gives one value, which is how the
+reproducibility claim was checked.
+
+The third differs from the second **only in identifier names** — the `MPCF`
+rename, and the corresponding `NUMERICAL_CORE` filenames such as
+`mpcf_supplementary.py`. No formula, bound, cost system or panel definition
+changed. That was verified the strong way: relabelling the published archive's
+3 834 method cells to the `MPCF` names and regenerating every downstream file
+left all 34 statistics and table CSVs numerically identical.
+
+So a clone reports a git SHA and a non-checkout copy reports `core-75c2b55c…`;
+either way `code_revision_consistency` holds, because every row in one run
+carries the same value. When comparing a fresh run against the published CSV,
+compare the *numbers*, not this identifier.
 
 ---
 
