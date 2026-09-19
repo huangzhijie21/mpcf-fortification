@@ -467,6 +467,9 @@ to the version of record.
 
 ## 12. Licence
 
-No licence file is included yet; the author must choose one. Until then the
-default applies and **all rights are reserved**. If you intend this to be
-reusable, MIT or Apache-2.0 is the usual choice for research code.
+MIT — see [`LICENSE`](LICENSE). You may use, modify and redistribute this code,
+including commercially, provided the copyright notice and permission notice are
+kept. It comes with no warranty.
+
+If you build on it in academic work, the citation in §11 is the thing that
+matters; the licence only governs the code.

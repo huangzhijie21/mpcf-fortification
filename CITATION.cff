@@ -11,7 +11,7 @@ abstract: >-
   robustness analysis, and the acceptance gates used for the published results.
 type: software
 version: "0.8.5"
-license: LicenseRef-NotYetSpecified
+license: MIT
 authors:
   - family-names: Huang
     given-names: Zhijie
