@@ -432,7 +432,6 @@ Seeded analyses (bootstrap, seed-extension) take `--seed` and are reproducible.
 | `revision/docs/README.md` | what the revision layer changed, item by item |
 | `revision/docs/CHANGES_ZH.md` | the same, in Chinese, with code locations |
 | `revision/docs/DELIVERY_SUMMARY_ZH.md` | the published numbers |
-| `revision/docs/FIGURE_TABLE_INVENTORY_ZH.md` | caption-ready figure/table inventory |
 
 ---
 
