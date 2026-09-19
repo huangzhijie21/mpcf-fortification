@@ -432,6 +432,11 @@ Seeded analyses (bootstrap, seed-extension) take `--seed` and are reproducible.
 | `revision/docs/README.md` | what the revision layer changed, item by item |
 | `revision/docs/CHANGES_ZH.md` | the same, in Chinese, with code locations |
 | `revision/docs/DELIVERY_SUMMARY_ZH.md` | the published numbers |
+| `revision/docs/REVIEWER2_SEED_ROBUSTNESS_ZH.md` | the seed-extension response, in Chinese |
+| `revision/docs/SERVER_BACKUP_ZH.md` | how the published run was deployed and archived |
+
+Four of the five documents under `revision/docs/` are in Chinese;
+`revision/docs/README.md`, and everything else in this repository, is in English.
 
 ---
 
