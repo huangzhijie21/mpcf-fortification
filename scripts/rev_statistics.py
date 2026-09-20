@@ -230,7 +230,25 @@ def zero_budget_audit(
 
 
 def scaling_table(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
-    """``N x budget x method`` runtime and gap aggregate from raw runs."""
+    """``N x budget x method`` runtime and gap aggregate from raw runs.
+
+    A run that hit the time limit records the wall clock at which the process was
+    stopped, not the time the solver would have needed.  Those rows are real
+    measurements of elapsed time, but they are **right-censored** as measurements
+    of solver speed, so this table keeps them apart instead of averaging the two
+    kinds together:
+
+    * ``runtime_selection_median_s``        every run (censored values included)
+    * ``runtime_selection_median_completed_s``   runs that finished on their own
+    * ``runtime_selection_censored_count``  how many were stopped
+
+    ``solved_count`` counts runs whose **own certificate closed**, which is a
+    property of the method, not of its answers: ``MPCF-Greedy`` never closes one
+    by construction, so its zero says nothing about solution quality.  For that,
+    read ``at_known_optimum_count`` (results equal to a certified optimum found
+    elsewhere) and ``empty_selection_count`` (runs that returned no protection at
+    all because the first selection round did not finish).
+    """
 
     grouped: dict[tuple[int, float, str], list[Mapping[str, Any]]] = defaultdict(list)
     for row in rows:
@@ -258,6 +276,26 @@ def scaling_table(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
             for row in values
             if str(row.get("certificate_mode")) in {"solver_closed", "cg_closed"}
         ]
+        completed = [row for row in values if str(row.get("status")) != "time_limit"]
+        censored = [row for row in values if str(row.get("status")) == "time_limit"]
+        completed_selection = [
+            value
+            for value in (_numeric(row, "runtime_selection_s") for row in completed)
+            if value is not None
+        ]
+        # A result that matches a certified optimum found by another method.  For
+        # Greedy this is the only quality signal available, since it proves
+        # nothing itself.
+        at_known_optimum = [
+            row
+            for row in values
+            if _numeric(row, "kappa") is not None
+            and _numeric(row, "kappa_opt") is not None
+            and abs(_numeric(row, "kappa") - _numeric(row, "kappa_opt")) <= 1e-9
+        ]
+        empty_selection = [
+            row for row in values if (_numeric(row, "selected_count") or 0.0) == 0.0
+        ]
         output.append(
             {
                 "N": size,
@@ -267,11 +305,21 @@ def scaling_table(rows: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
                 "time_limit_s": _numeric(values[0], "time_limit_s"),
                 "solved_count": len(solved),
                 "solved_rate": len(solved) / len(values) if values else "",
+                "completed_count": len(completed),
+                "completed_rate": len(completed) / len(values) if values else "",
+                "time_limit_count": len(censored),
                 "instances_with_optimum": len(rows_with_opt),
+                "gap_coverage_rate": len(rows_with_opt) / len(values) if values else "",
+                "at_known_optimum_count": len(at_known_optimum),
+                "empty_selection_count": len(empty_selection),
                 "runtime_selection_median_s": _stat(selection, np.median),
+                "runtime_selection_median_completed_s": _stat(completed_selection, np.median),
                 "runtime_selection_max_s": _stat(selection, np.max),
                 "runtime_total_median_s": _stat(total, np.median),
                 "runtime_total_max_s": _stat(total, np.max),
+                # Defined only where a certified optimum exists, so this is the
+                # median over the covered subset -- see scaling_gap_bounds_table
+                # for the interval over every instance.
                 "relative_gap_median": _stat(gaps, np.median),
                 "relative_gap_max": _stat(gaps, np.max),
                 "relative_gap_mean": _stat(gaps, np.mean),
@@ -568,6 +616,10 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     if scaling_rows:
         write_csv(tables_dir / "table_scaling.csv", scaling_table(scaling_rows))
+        write_csv(
+            tables_dir / "table_scaling_gap_bounds.csv",
+            S.scaling_gap_bounds(scaling_rows),
+        )
 
     if heterogeneity_rows:
         write_csv(

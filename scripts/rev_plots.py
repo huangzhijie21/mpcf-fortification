@@ -34,6 +34,7 @@ import numpy as np  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from rmcd_f.rev import stats as S  # noqa: E402
 from rmcd_f.rev.schema import coerce_row  # noqa: E402
 
 # ---------------------------------------------------------------------------
@@ -362,26 +363,59 @@ def figure_scaling(writer: FigureWriter, runs: Sequence[Mapping[str, Any]]) -> N
     unified_limit = limits.pop() if len(limits) == 1 else None
 
     # --- fig5: runtime ----------------------------------------------------
-    figure, axis = plt.subplots(figsize=(TEXT_WIDTH, 3.5))
+    #
+    # A run stopped by the time limit records the wall clock at which it was
+    # killed.  That is a real elapsed time but a right-censored measurement of
+    # how long the method needs, so the two are drawn differently: the solid
+    # curve is the median over runs that finished on their own, and a hollow
+    # marker on the budget line marks a size where runs were stopped.
+    figure, axis = plt.subplots(figsize=(TEXT_WIDTH, 3.6))
     for method in methods:
-        medians, tops = [], []
+        medians, censored = [], []
         for size in sizes:
             values = [
-                _number(row, "runtime_selection_s")
+                row
                 for row in rows
                 if str(row["method"]) == method and int(row["N"]) == size
             ]
-            values = [value for value in values if value is not None]
-            medians.append(float(np.median(values)) if values else np.nan)
-            tops.append(float(np.max(values)) if values else np.nan)
+            finished = [
+                _number(row, "runtime_selection_s")
+                for row in values
+                if str(row.get("status")) != "time_limit"
+            ]
+            finished = [value for value in finished if value is not None]
+            stopped = [row for row in values if str(row.get("status")) == "time_limit"]
+            medians.append(float(np.median(finished)) if finished else np.nan)
+            censored.append(len(stopped))
         colour = METHOD_COLORS.get(method, "#666666")
-        axis.plot(sizes, medians, marker="o", markersize=3.5, linewidth=1.2,
-                  color=colour, label=f"{short(method)} median")
-        axis.plot(sizes, tops, linewidth=0.8, linestyle="--", color=colour, alpha=0.7,
-                  label=f"{short(method)} max")
+        axis.plot(
+            sizes, medians, marker="o", markersize=3.6, linewidth=1.2,
+            color=colour, label=f"{short(method)} median (completed)",
+        )
+        if unified_limit is not None:
+            hit = [
+                size for size, count in zip(sizes, censored) if count
+            ]
+            if hit:
+                axis.plot(
+                    hit, [unified_limit] * len(hit), linestyle="none", marker="o",
+                    markersize=4.2, markerfacecolor="none", markeredgewidth=1.0,
+                    markeredgecolor=colour,
+                )
+                for size in hit:
+                    last = [
+                        value for value, s in zip(medians, sizes)
+                        if s <= size and np.isfinite(value)
+                    ]
+                    if last:
+                        axis.annotate(
+                            "", xy=(size, unified_limit), xytext=(size, last[-1]),
+                            arrowprops=dict(arrowstyle="->", color=colour,
+                                            linewidth=0.7, alpha=0.65),
+                        )
     if unified_limit is not None:
         axis.axhline(unified_limit, color="#b03030", linewidth=0.9, linestyle=":")
-        axis.text(sizes[0], unified_limit, f" unified limit {unified_limit:.0f} s",
+        axis.text(sizes[0], unified_limit, f" budget {unified_limit:.0f} s",
                   va="bottom", ha="left", fontsize=7.5, color="#b03030")
     axis.set_xscale("log")
     axis.set_yscale("log")
@@ -390,13 +424,21 @@ def figure_scaling(writer: FigureWriter, runs: Sequence[Mapping[str, Any]]) -> N
     axis.set_xlabel("nodes per graph  $N$")
     axis.set_ylabel("selection runtime (s)")
     axis.set_title(
-        "Scaling under one unified time limit for all three MPCF methods", loc="left"
+        "Scaling under one budget per method; hollow markers were stopped "
+        "at the budget",
+        loc="left",
     )
     axis.legend(loc="upper left", ncol=2, columnspacing=1.0, handlelength=1.6)
     writer.save(figure, "fig5")
 
     # --- fig6: solution quality -------------------------------------------
-    figure, axis = plt.subplots(figsize=(TEXT_WIDTH, 3.5))
+    #
+    # MPCF-Greedy never certifies its own optimality, so "solved" says nothing
+    # about it.  Its gap is drawn over **all** instances as the optimisation
+    # interval implied by the saved bounds, and the estimate restricted to the
+    # instances that happen to carry a certified optimum is shown separately --
+    # at N=1000 that subset is a badly selected one and overstates the gap.
+    figure, axis = plt.subplots(figsize=(TEXT_WIDTH, 3.6))
     for method in methods:
         medians, tops = [], []
         for size in sizes:
@@ -412,12 +454,38 @@ def figure_scaling(writer: FigureWriter, runs: Sequence[Mapping[str, Any]]) -> N
         axis.plot(sizes, medians, marker="o", markersize=3.5, linewidth=1.2,
                   color=colour, label=short(method))
         axis.fill_between(sizes, medians, tops, color=colour, alpha=0.12, linewidth=0)
+
+    bounds = S.scaling_gap_bounds(rows)
+    if bounds:
+        by_size: dict[int, list[dict[str, Any]]] = {}
+        for entry in bounds:
+            by_size.setdefault(int(entry["N"]), []).append(entry)
+        low, high, restricted = [], [], []
+        for size in sizes:
+            entries = by_size.get(size, [])
+            low.append(float(np.median([e["gap_median_lower_bound"] for e in entries]))
+                       if entries else np.nan)
+            high.append(float(np.median([e["gap_median_upper_bound"] for e in entries]))
+                        if entries else np.nan)
+            known = [e["gap_median_known_optimum_only"] for e in entries
+                     if e["gap_median_known_optimum_only"] != ""]
+            restricted.append(float(np.median(known)) if known else np.nan)
+        colour = METHOD_COLORS.get("MPCF-Greedy", "#666666")
+        axis.fill_between(sizes, low, high, color=colour, alpha=0.28, linewidth=0,
+                          label="Greedy gap: interval over all 9 instances")
+        axis.plot(sizes, restricted, linestyle="none", marker="v", markersize=4.0,
+                  markerfacecolor="none", markeredgewidth=1.0, markeredgecolor=colour,
+                  label="Greedy gap: known-optimum subset only")
     axis.set_xscale("log")
     axis.set_xticks(sizes)
     axis.set_xticklabels([str(size) for size in sizes])
     axis.set_xlabel("nodes per graph  $N$")
     axis.set_ylabel("relative gap to the certified optimum")
-    axis.set_title("Scaling: solution quality (band spans median to max)", loc="left")
+    axis.set_title(
+        "Scaling: solution quality; the Greedy band is an optimisation bound, "
+        "not a confidence interval",
+        loc="left",
+    )
     axis.set_ylim(bottom=0.0)
     axis.legend(loc="upper left", handlelength=1.6)
     writer.save(figure, "fig6")

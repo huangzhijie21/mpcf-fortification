@@ -205,35 +205,43 @@ w("")
 
 # Figure 5 / 6 (scaling)
 st_tbl_all = read("tables/table_scaling.csv")
+gap_bounds = read("tables/table_scaling_gap_bounds.csv")
 w("### Figure 5　`figures/fig5.pdf` / `fig5.png`　—　**最终版**")
 w("")
 w("**内容**：scaling 面板下运行时间随 N 的增长（选解时间，对数纵轴）。")
+w("**实线 = 仅正常完成运行的中位；空心标记落在预算线上 = 该规模有运行被停止。**")
 w("")
-w("**可直接写进 caption 的数字**（每格 n = 9 实例，统一时限 3600 s/方法总量）：")
+w("**可直接写进 caption 的数字**（每格 n = 9 实例，预算 3600 s/方法总量）：")
 w("")
-w("| N | 预算 | MPCF-Exact 中位(s) | MPCF-CG 中位(s) | MPCF-Greedy 中位(s) | Exact 解出 | CG 解出 |")
-w("|---:|---:|---:|---:|---:|---:|---:|")
+w("| N | 预算 | 方法 | 正常完成 | 超时 | 中位(仅完成) | 中位(全部) |")
+w("|---:|---:|---|---:|---:|---:|---:|")
 for size in sorted({int(r["N"]) for r in st_tbl_all}):
     for budget in sorted({float(r["budget_ratio"]) for r in st_tbl_all if int(r["N"]) == size}):
         pick = {r["method"]: r for r in st_tbl_all
                 if int(r["N"]) == size and abs(float(r["budget_ratio"]) - budget) < 1e-12}
-        ex, cg, gr = pick.get("MPCF-Exact"), pick.get("MPCF-CG"), pick.get("MPCF-Greedy")
-        if not (ex and cg and gr):
-            continue
-        w(f"| {size} | {budget:.0%} | {fmt(num(ex['runtime_selection_median_s']), 4)} | "
-          f"{fmt(num(cg['runtime_selection_median_s']), 4)} | {fmt(num(gr['runtime_selection_median_s']), 4)} | "
-          f"{ex['solved_count']}/{ex['n_instances']} | {cg['solved_count']}/{cg['n_instances']} |")
+        for name in ("MPCF-Exact", "MPCF-CG", "MPCF-Greedy"):
+            row = pick.get(name)
+            if not row:
+                continue
+            w(f"| {size} | {budget:.0%} | {name} | "
+              f"{row.get('completed_count','')}/{row['n_instances']} | "
+              f"{row.get('time_limit_count','')} | "
+              f"{fmt(num(row.get('runtime_selection_median_completed_s','')), 4)} | "
+              f"{fmt(num(row['runtime_selection_median_s']), 4)} |")
 w("")
-w("**要点**：两个精确求解器都在时限内解出绝大多数格；`solved_count` 未满的格是**如实报告的**")
-w("时限截断，不是缺失数据。")
+w("**要点**：超时运行记录的是**进程被停止时的墙钟**（116 条里有 112 个不同取值，")
+w("没有一条恰好 3600.0），对「求解速度」而言是右截断，所以两类值必须分开呈现。")
+w("`solved_count` 未满的格是如实报告的时限截断，不是缺失数据。")
 w("")
 
 w("### Figure 6　`figures/fig6.pdf` / `fig6.png`　—　**最终版**")
 w("")
 w("**内容**：scaling 面板下解质量（relative gap）随 N 的变化。")
+w("Greedy 的阴影带**不是置信区间**，而是由上下界给出的**优化区间**；")
+w("倒三角是「仅已知最优子集」的估计，用来说明两者差异。")
 w("")
-w("| N | 预算 | Exact 中位 gap | CG 中位 gap | Greedy 中位 gap | Greedy 最大 gap |")
-w("|---:|---:|---:|---:|---:|---:|")
+w("| N | 预算 | Exact 中位 gap | CG 中位 gap | **Greedy 全实例中位区间** | Greedy 仅最优子集 | 覆盖 |")
+w("|---:|---:|---:|---:|---|---:|---:|")
 for size in sorted({int(r["N"]) for r in st_tbl_all}):
     for budget in sorted({float(r["budget_ratio"]) for r in st_tbl_all if int(r["N"]) == size}):
         pick = {r["method"]: r for r in st_tbl_all
@@ -241,12 +249,26 @@ for size in sorted({int(r["N"]) for r in st_tbl_all}):
         ex, cg, gr = pick.get("MPCF-Exact"), pick.get("MPCF-CG"), pick.get("MPCF-Greedy")
         if not (ex and cg and gr):
             continue
+        bound = next((r for r in gap_bounds
+                      if int(r["N"]) == size
+                      and abs(float(r["budget_ratio"]) - budget) < 1e-12), None)
+        span = (
+            f"[{fmt(num(bound['gap_median_lower_bound']), 6)}, "
+            f"{fmt(num(bound['gap_median_upper_bound']), 6)}]"
+            if bound else "NA"
+        )
         w(f"| {size} | {budget:.0%} | {fmt(num(ex['relative_gap_median']))} | "
-          f"{fmt(num(cg['relative_gap_median']))} | {fmt(num(gr['relative_gap_median']))} | "
-          f"{fmt(num(gr['relative_gap_max']))} |")
+          f"{fmt(num(cg['relative_gap_median']))} | {span} | "
+          f"{fmt(num(bound['gap_median_known_optimum_only']), 4) if bound else 'NA'} | "
+          f"{bound['n_with_known_optimum'] if bound else '?'}/9 |")
 w("")
-w("**要点**：规模变大时 Greedy 的 gap 单调上升（N=1000 @ 10% 中位 0.50），")
-w("而 Exact/CG 始终贴住认证最优值——这正是「必须精确求解」的规模侧证据。")
+w("**要点（对早前说法的更正）**：仅用「有已知最优值」的实例会**高估** N=1000 @ 10% 的差距 ——")
+w("该子集是 50.0000%，而全 9 实例的中位是 **28.9308%–29.0036%**。")
+w("该格里恰是 3 个 centralized 实例（精确的 50%）有最优值，拉高了子集中位。")
+w("Greedy 的 `solved_count` 恒为 0 是**输出契约**（`solver_optimal` 固定 False），不是性能结论；")
+w("它在 scaling 面板里有 **21 条结果与已知最优值相等**。")
+w("N=1000 的 27 次 Greedy 运行全部返回**空集**（`selected_count = 0`），")
+w("其 `kappa` 是 κ(∅)，不代表 Greedy 的求解质量。")
 w("")
 
 # Figure S1 (seed extension convergence)

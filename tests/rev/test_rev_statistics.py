@@ -261,3 +261,98 @@ def test_bootstrap_summary_reports_the_cluster_unit() -> None:
     assert row["n_clusters"] == 6
     assert row["n_observations"] == 6
     assert row["ci_low"] <= row["estimate"] <= row["ci_high"]
+
+
+# ---------------------------------------------------------------------------
+# scaling gaps over every instance, not just the covered subset
+# ---------------------------------------------------------------------------
+
+
+def _scaling_row(instance: str, method: str, *, kappa, optimum=None, incumbent=None,
+                 best_bound=None, selected=1, status="optimal") -> dict:
+    return {
+        "experiment": "scaling",
+        "instance_id": f"scaling__{instance}",
+        "graph_id": instance,
+        "N": 1000,
+        "budget_ratio": 0.1,
+        "method": method,
+        "kappa": kappa,
+        "kappa_opt": optimum,
+        "incumbent": incumbent,
+        "best_bound": best_bound,
+        "cg_L": None,
+        "cg_U": None,
+        "selected_count": selected,
+        "status": status,
+        "relative_gap": (
+            (optimum - kappa) / optimum
+            if optimum not in (None, 0) and kappa is not None
+            else None
+        ),
+    }
+
+
+def test_gap_bounds_use_every_instance_not_only_the_covered_ones() -> None:
+    """The subset with a certified optimum can be badly selected.
+
+    The two covered instances have the *largest* gaps (0.5), while the two
+    uncovered ones are pinned at 0.1 by their saved bounds.  The covered-subset
+    median is therefore 0.5, but over all four instances the median is 0.3 --
+    reporting the subset alone overstates the cell.
+    """
+
+    rows = []
+    for index, (kappa_g, optimum, low, high) in enumerate(
+        [(50.0, 100.0, 100.0, 100.0), (50.0, 100.0, 100.0, 100.0),
+         (90.0, None, 100.0, 100.0), (90.0, None, 100.0, 100.0)]
+    ):
+        instance = f"g{index}"
+        rows.append(_scaling_row(instance, "MPCF-Greedy", kappa=kappa_g,
+                                 optimum=optimum, status="time_limit"))
+        rows.append(_scaling_row(instance, "MPCF-Exact", kappa=low,
+                                 optimum=optimum, incumbent=low, best_bound=high,
+                                 status="optimal" if optimum else "time_limit"))
+    bounds = S.scaling_gap_bounds(rows)
+    assert len(bounds) == 1
+    row = bounds[0]
+    assert row["n_with_known_optimum"] == 2
+    assert row["gap_median_known_optimum_only"] == pytest.approx(0.5)
+    # Sorted over all four: 0.1, 0.1, 0.5, 0.5 -> median 0.3, not 0.5.
+    assert row["gap_median_lower_bound"] == pytest.approx(0.3)
+    assert row["gap_median_upper_bound"] == pytest.approx(0.3)
+    assert row["gap_median_interval_exact"] == 1
+    assert row["gap_median_lower_bound"] < row["gap_median_known_optimum_only"]
+
+
+def test_gap_bounds_widen_when_the_optimum_is_not_pinned() -> None:
+    """A loose bracket must produce an interval, not a point estimate."""
+
+    rows = []
+    for index in range(3):
+        instance = f"g{index}"
+        rows.append(_scaling_row(instance, "MPCF-Greedy", kappa=60.0,
+                                 status="time_limit", selected=0))
+        rows.append(_scaling_row(instance, "MPCF-Exact", kappa=70.0, incumbent=70.0,
+                                 best_bound=100.0, status="time_limit"))
+    row = S.scaling_gap_bounds(rows)[0]
+    assert row["gap_median_lower_bound"] == pytest.approx(1 - 60.0 / 70.0)
+    assert row["gap_median_upper_bound"] == pytest.approx(1 - 60.0 / 100.0)
+    assert row["gap_median_lower_bound"] < row["gap_median_upper_bound"]
+    assert row["gap_median_interval_exact"] == 0
+    assert row["empty_selection_count"] == 3
+
+
+def test_gap_bounds_clamp_floating_point_noise_to_zero() -> None:
+    """A gap of 1e-15 is zero; it must not read as a range."""
+
+    rows = []
+    for index in range(2):
+        instance = f"g{index}"
+        rows.append(_scaling_row(instance, "MPCF-Greedy", kappa=100.0, optimum=100.0))
+        rows.append(_scaling_row(instance, "MPCF-Exact", kappa=100.0, optimum=100.0,
+                                 incumbent=100.0, best_bound=100.0))
+    row = S.scaling_gap_bounds(rows)[0]
+    assert row["gap_median_lower_bound"] == 0.0
+    assert row["gap_median_upper_bound"] == 0.0
+    assert row["gap_median_interval_exact"] == 1

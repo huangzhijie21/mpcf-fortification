@@ -42,6 +42,12 @@ DEFAULT_SEED = 20260905
 DEFAULT_ALPHA = 0.05
 MIN_PAIRS = 2
 
+#: The methods that certify their own optimality.  ``MPCF-Greedy`` is not here by
+#: construction: it returns a one-step marginal ablation and sets
+#: ``optimal = False`` unconditionally, so its certificate is always open and its
+#: ``solved_count`` of zero says nothing about the quality of its answers.
+CERTIFIED_METHODS = ("MPCF-Exact", "MPCF-CG")
+
 #: Which direction of each metric is good.  ``relative_gap`` is a distance to
 #: the optimum, so a *negative* paired difference (reference minus comparator)
 #: favours the reference; ``kappa`` is a defended margin, so a positive one
@@ -579,6 +585,155 @@ def _rate_of(values: Sequence[Mapping[str, Any]], predicate: Callable[[Mapping[s
     if not values:
         return ""
     return float(np.mean([bool(predicate(row)) for row in values]))
+
+
+def number(row: Mapping[str, Any], key: str) -> float | None:
+    """One finite float from a run row, or ``None`` when the field is ``NA``."""
+
+    value = row.get(key)
+    if value is None or value == "NA":
+        return None
+    try:
+        result = float(value)
+    except (TypeError, ValueError):
+        return None
+    return result if math.isfinite(result) else None
+
+
+def instance_optimum_bounds(
+    rows: Sequence[Mapping[str, Any]],
+) -> tuple[float, float] | None:
+    """Bracket the certified optimum of one ``(instance, budget)`` cell.
+
+    ``kappa_opt`` is known only where an exact solver closed, but a run that hit
+    its time limit still leaves two useful numbers: its incumbent is a
+    **feasible** defence and therefore lower-bounds ``kappa*``, while its own
+    upper bound (``best_bound`` for the MILP, ``cg_U`` for cut generation)
+    upper-bounds it.  Together they bracket the optimum even when nothing closed.
+    """
+
+    lowers: list[float] = []
+    uppers: list[float] = []
+    for row in rows:
+        if str(row.get("method")) not in CERTIFIED_METHODS:
+            continue
+        for column, bucket in (
+            ("kappa_opt", "both"),
+            ("incumbent", "lower"),
+            ("cg_L", "lower"),
+            ("best_bound", "upper"),
+            ("cg_U", "upper"),
+        ):
+            value = number(row, column)
+            if value is None:
+                continue
+            if bucket in ("both", "lower"):
+                lowers.append(value)
+            if bucket in ("both", "upper"):
+                uppers.append(value)
+    if not lowers or not uppers:
+        return None
+    return max(lowers), min(uppers)
+
+
+def scaling_gap_bounds(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    method: str = "MPCF-Greedy",
+) -> list[dict[str, Any]]:
+    """A method's relative gap over **every** instance, as an interval.
+
+    Restricting the gap to the instances that happen to carry a certified
+    optimum is a selected subset, and at ``N=1000`` a badly selected one: the
+    covered instances there have the *largest* gaps, so the subset median
+    overstates the whole-cell median by about 21 points.  Reporting the subset
+    alone therefore misleads in the one cell the scaling claim rests on.
+
+    For instance ``i`` with result ``G_i`` and ``L_i <= kappa*_i <= U_i``,
+
+        1 - G_i / L_i  <=  g_i  <=  1 - G_i / U_i
+
+    because ``g_i = 1 - G_i / kappa*_i`` increases in ``kappa*_i``.  The median is
+    monotone, so the median of the lower bounds brackets the cell's median gap
+    from below and the median of the upper bounds from above.  This is an
+    optimisation bound, not a confidence interval.  Where the two coincide the
+    median is pinned exactly even if individual instances are not.
+    """
+
+    cells: dict[tuple[int, float], list[Mapping[str, Any]]] = {}
+    for row in rows:
+        cells.setdefault((int(row["N"]), float(row["budget_ratio"])), []).append(row)
+
+    output: list[dict[str, Any]] = []
+    for (size, budget), values in sorted(cells.items()):
+        by_instance: dict[str, list[Mapping[str, Any]]] = {}
+        for row in values:
+            by_instance.setdefault(str(row["instance_id"]), []).append(row)
+
+        lowers: list[float] = []
+        uppers: list[float] = []
+        known: list[float] = []
+        considered = 0
+        empty_selection = 0
+        completed = 0
+        for rows_i in by_instance.values():
+            target = next(
+                (r for r in rows_i if str(r.get("method")) == method), None
+            )
+            if target is None:
+                continue
+            value = number(target, "kappa")
+            if value is None:
+                continue
+            considered += 1
+            if (number(target, "selected_count") or 0.0) == 0.0:
+                empty_selection += 1
+            if str(target.get("status")) != "time_limit":
+                completed += 1
+            bounded = instance_optimum_bounds(rows_i)
+            if bounded is None:
+                continue
+            low, high = bounded
+            low = max(low, value)          # its own feasible value is a lower bound
+            if low <= 0 or high <= 0:
+                continue
+            lowers.append(1.0 - value / low)
+            uppers.append(1.0 - value / high)
+            optimum = number(target, "kappa_opt")
+            if optimum is not None and optimum > 0:
+                known.append(1.0 - value / optimum)
+
+        if not lowers:
+            continue
+        lower = float(np.median(lowers))
+        upper = float(np.median(uppers))
+        # Rounding noise from the arithmetic above must not read as a range.
+        if abs(lower) < 1e-12:
+            lower = 0.0
+        if abs(upper) < 1e-12:
+            upper = 0.0
+        output.append(
+            {
+                "N": size,
+                "budget_ratio": budget,
+                "n_instances": len(by_instance),
+                "n_with_known_optimum": len(
+                    {str(r["instance_id"]) for r in values
+                     if number(r, "kappa_opt") is not None}
+                ),
+                "method": method,
+                "n_results": considered,
+                "completed_count": completed,
+                "empty_selection_count": empty_selection,
+                "gap_median_lower_bound": lower,
+                "gap_median_upper_bound": upper,
+                "gap_median_interval_exact": int(abs(upper - lower) <= 1e-12),
+                "gap_median_known_optimum_only": (
+                    float(np.median(known)) if known else ""
+                ),
+            }
+        )
+    return output
 
 
 def bootstrap_summary_rows(
